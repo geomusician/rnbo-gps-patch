@@ -64,22 +64,46 @@ async function setup() {
         return;
     }
 
-// ✅ GPS code starts here
+device.parameterChangeEvent.subscribe(param => {
+    console.log("Param changed:", param.id, param.value);
+});
+
+// ✅ GPS update section (raw coordinates)
 if (navigator.geolocation) {
-    navigator.geolocation.watchPosition((position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+    navigator.geolocation.watchPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
 
-        const normLat = (lat + 90) / 180;
-        const normLon = (lon + 180) / 360;
+            // Log raw GPS values
+            console.log("GPS update:", lat, lon);
 
-        device.parametersById.get("latitude").value = normLat;
-        device.parametersById.get("longitude").value = normLon;
+            // Get RNBO parameter objects
+            const latParam = device.parametersById.get("latitude");
+            const lonParam = device.parametersById.get("longitude");
 
-        console.log("GPS update:", lat, lon);
-    }, (err) => {
-        console.error("GPS error:", err);
-    }, { enableHighAccuracy: true });
+            // Log the parameter objects to check they exist
+            console.log("Latitude param object:", latParam);
+            console.log("Longitude param object:", lonParam);
+
+            // Only update if parameters exist
+            if (latParam && lonParam) {
+                // Assign raw GPS values directly
+                latParam.value = lat;
+                lonParam.value = lon;
+
+                console.log("RNBO parameters updated (raw):", latParam.value, lonParam.value);
+            } else {
+                console.warn("RNBO parameters not found!");
+            }
+        },
+        (err) => {
+            console.error("GPS error:", err);
+        },
+        { enableHighAccuracy: true }
+    );
+} else {
+    console.warn("Geolocation is not supported in this browser.");
 }
 
     // (Optional) Load the samples
